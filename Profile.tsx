@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
 import { Camera, Save } from 'lucide-react';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const Profile = () => {
     const { user, updateUser } = useAuth();
@@ -12,8 +13,7 @@ const Profile = () => {
     const handleSaveBio = async () => {
         if (!user) return;
         try {
-            await axios.post('/api/update-profile', { userId: user.id, bio });
-            updateUser({ bio });
+            await updateUser({ bio });
             setIsEditing(false);
         } catch (err) {
             console.error(err);
@@ -24,29 +24,19 @@ const Profile = () => {
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && user) {
             setUploading(true);
-            const formData = new FormData();
-            formData.append('file', e.target.files[0]);
-            formData.append('target', 'profile'); 
-            formData.append('type', 'image');
-
+            const file = e.target.files[0];
+            
             try {
-                // Upload file
-                const res = await axios.post('/api/upload', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                // Upload to Firebase Storage
+                const storageRef = ref(storage, `avatars/${user.id}-${Date.now()}`);
+                await uploadBytes(storageRef, file);
+                const avatarUrl = await getDownloadURL(storageRef);
                 
-                const avatarUrl = res.data.url;
-                
-                // Persist to user profile
-                await axios.post('/api/update-profile', { 
-                    userId: user.id, 
-                    avatar: avatarUrl 
-                });
-
-                updateUser({ avatar: avatarUrl });
+                // Update user profile
+                await updateUser({ avatar: avatarUrl });
                 alert("Profile picture updated");
             } catch (err) {
-                console.error(err);
+                console.error("Upload failed", err);
                 alert("Upload failed");
             } finally {
                 setUploading(false);
@@ -100,23 +90,24 @@ const Profile = () => {
                         </div>
                     </div>
 
+                    {/* Bio Section */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm text-gray-400 font-medium">Bio</label>
-                            {!isEditing ? (
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-sm font-semibold text-gray-400">Bio</label>
+                            {isEditing ? (
+                                <button 
+                                    onClick={handleSaveBio}
+                                    className="text-xs flex items-center text-green-400 hover:text-green-300"
+                                >
+                                    <Save size={14} className="mr-1" />
+                                    Save
+                                </button>
+                            ) : (
                                 <button 
                                     onClick={() => setIsEditing(true)}
                                     className="text-xs text-blue-400 hover:text-blue-300"
                                 >
                                     Edit
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={handleSaveBio}
-                                    className="text-xs text-green-400 hover:text-green-300 flex items-center space-x-1"
-                                >
-                                    <Save size={12} />
-                                    <span>Save</span>
                                 </button>
                             )}
                         </div>
@@ -125,12 +116,12 @@ const Profile = () => {
                             <textarea 
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
-                                className="w-full bg-gray-900 text-white p-3 rounded-lg border border-gray-700 focus:border-blue-500 outline-none h-32 resize-none"
+                                className="w-full bg-gray-900 text-white rounded p-3 border border-gray-700 focus:border-blue-500 outline-none resize-none h-24"
                                 placeholder="Tell us about yourself..."
                             />
                         ) : (
-                            <p className="text-gray-300 leading-relaxed">
-                                {bio || <span className="italic text-gray-600">No bio set yet.</span>}
+                            <p className="text-gray-300 italic">
+                                {user.bio || "No bio yet."}
                             </p>
                         )}
                     </div>
