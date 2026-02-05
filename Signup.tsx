@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post('/api/register', { email, password, name });
-            login(res.data.user);
+            // Create Auth User
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Create Firestore Profile
+            await setDoc(doc(db, 'users', user.uid), {
+                id: user.uid,
+                name,
+                email,
+                bio: '',
+                hub: null,
+                connected: [],
+                avatar: null
+            });
+
             navigate('/general');
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Signup failed');
+            console.error(err);
+            setError(err.message || 'Signup failed');
         }
     };
 

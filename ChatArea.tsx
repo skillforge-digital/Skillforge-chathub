@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image as ImageIcon, Mic } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface Message {
     id: string;
@@ -9,7 +10,7 @@ interface Message {
     senderName?: string;
     content: string;
     type: 'text' | 'image' | 'voice';
-    timestamp: string;
+    timestamp: any; // Firestore timestamp or number
     scanned?: boolean;
 }
 
@@ -55,21 +56,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomName, messages, onSendMessage, 
             const file = e.target.files[0];
             setIsUploading(true);
             
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('target', scanMedia ? 'general' : 'dm'); // Simple logic for backend
-            formData.append('type', 'image');
-
             try {
-                const res = await axios.post('/api/upload', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                // Upload to Firebase Storage
+                const storageRef = ref(storage, `uploads/${Date.now()}-${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
                 
-                // If scanned and safe (or not scanned), send message
-                // The backend mock returns { url, scanned }
-                // If scanMedia is true, backend might reject or flag.
-                // For this mock, we assume success.
-                onSendMessage(res.data.url, 'image');
+                // In a real app with scanning, we'd trigger a cloud function here
+                onSendMessage(url, 'image');
             } catch (err) {
                 console.error("Upload failed", err);
                 alert("Upload failed");
@@ -90,6 +84,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomName, messages, onSendMessage, 
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                 {messages.map((msg) => {
                     const isMe = msg.senderId === user?.id;
+                    const timeString = msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString() : new Date(msg.timestamp).toLocaleTimeString();
+                    
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] p-3 rounded-lg backdrop-blur-sm ${isMe ? 'bg-blue-600/90 text-white' : 'bg-gray-800/80 text-gray-200 border border-white/5'}`}>
@@ -112,7 +108,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomName, messages, onSendMessage, 
                                 )}
                                 
                                 <span className="text-[10px] opacity-70 block text-right mt-1">
-                                    {new Date(msg.timestamp).toLocaleTimeString()}
+                                    {timeString}
                                 </span>
                             </div>
                         </div>

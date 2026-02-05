@@ -1,49 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import ChatArea from '../components/ChatArea';
-import axios from 'axios';
+import { db } from '../firebase';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 const GeneralChat = () => {
     const { user, updateUser } = useAuth();
-    const socket = useSocket();
     const [messages, setMessages] = useState<any[]>([]);
     const [showHubModal, setShowHubModal] = useState(!user?.hub);
 
     useEffect(() => {
-        if (!socket) return;
-
-        socket.emit('join_room', 'general');
-
-        socket.on('receive_message', (data) => {
-            setMessages((prev) => [...prev, data]);
+        const q = query(collection(db, 'messages', 'general', 'chat'), orderBy('timestamp', 'asc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const msgs = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setMessages(msgs);
         });
 
-        return () => {
-            socket.off('receive_message');
-        };
-    }, [socket]);
+        return () => unsubscribe();
+    }, []);
 
-    const sendMessage = (content: string, type: 'text' | 'image' | 'voice') => {
-        if (!socket || !user) return;
+    const sendMessage = async (content: string, type: 'text' | 'image' | 'voice') => {
+        if (!user) return;
         
-        socket.emit('send_message', {
-            room: 'general',
+        await addDoc(collection(db, 'messages', 'general', 'chat'), {
             senderId: user.id,
             senderName: user.name,
             content,
-            type
+            type,
+            timestamp: serverTimestamp(),
+            scanned: true // General chat is always scanned (mock)
         });
     };
 
     const joinHub = async (hub: 'traders' | 'creative' | 'developers') => {
         try {
-            await axios.post('/api/join-hub', { userId: user?.id, hub });
-            updateUser({ hub });
+            await updateUser({ hub });
             setShowHubModal(false);
             alert(`Welcome to the ${hub} Hub!`);
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to join hub');
+            console.error(err);
+            alert('Failed to join hub');
         }
     };
 

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { auth, db } from '../firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 interface User {
     id: string;
@@ -13,39 +15,55 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (user: User) => void;
-    logout: () => void;
-    updateUser: (updates: Partial<User>) => void;
+    loading: boolean;
+    logout: () => Promise<void>;
+    updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(() => {
-        const stored = localStorage.getItem('user');
-        return stored ? JSON.parse(stored) : null;
-    });
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const login = (userData: User) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-    };
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                // Fetch user profile from Firestore
+                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if (userDoc.exists()) {
+                    setUser(userDoc.data() as User);
+                } else {
+                    // Fallback if doc doesn't exist (shouldn't happen if signup is correct)
+                    // Or maybe it's a new user via Google Auth (not implemented yet)
+                    setUser(null);
+                }
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
 
-    const logout = () => {
+        return () => unsubscribe();
+    }, []);
+
+    const logout = async () => {
+        await signOut(auth);
         setUser(null);
-        localStorage.removeItem('user');
     };
 
-    const updateUser = (updates: Partial<User>) => {
+    const updateUser = async (updates: Partial<User>) => {
         if (!user) return;
-        const newUser = { ...user, ...updates };
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
+        const userDocRef = doc(db, 'users', user.id);
+        await updateDoc(userDocRef, updates);
+        setUser(prev => prev ? { ...prev, ...updates } : null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser }}>
-            {children}
+        <AuthContext.Provider value={{ user, loading, logout, updateUser }}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };

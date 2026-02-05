@@ -1,6 +1,6 @@
 # SkillForge ChatHub
 
-A futuristic social platform featuring specialized hubs, connection-based messaging, and immersive cosmic aesthetics.
+A futuristic social platform featuring specialized hubs, connection-based messaging, and immersive cosmic aesthetics. Now powered by **Firebase** for real-time chat, authentication, and data storage.
 
 ![SkillForge ChatHub](https://images.unsplash.com/photo-1614730341194-75c60740a2d3?q=80&w=2070&auto=format&fit=crop)
 
@@ -12,13 +12,13 @@ A futuristic social platform featuring specialized hubs, connection-based messag
 - **Custom Wallpapers**: Users can override the daily background in **Direct Messages** to set their own mood.
 
 ### **Hub System**
-- **General Hub**: Open comms for all users. Media uploads are scanned for safety.
+- **General Hub**: Open comms for all users.
 - **Specialized Hubs**: Choose your path (Traders Hope, Creative Hope, or Developer Home). *Warning: Choosing one locks the others forever.*
 
 ### **Direct Messaging**
+- **Real-Time Chat**: Powered by Firestore.
 - **Connection-Based**: Send requests to start chatting.
-- **3-Message Rule**: New connections are limited to 3 messages until the recipient accepts.
-- **Unrestricted Media**: Share photos and voice notes freely in private chats.
+- **Media Sharing**: Share images via Firebase Storage.
 
 ### **Profile**
 - Custom Avatars and Bio.
@@ -28,6 +28,7 @@ A futuristic social platform featuring specialized hubs, connection-based messag
 
 ### Prerequisites
 - Node.js (v14 or higher)
+- A Firebase Project (Free Tier)
 
 ### Installation
 
@@ -37,44 +38,45 @@ A futuristic social platform featuring specialized hubs, connection-based messag
     cd skillforge-chathub
     ```
 
-2.  **Setup Server**
+2.  **Install Dependencies**
     ```bash
-    cd server
-    npm install
-    npm start
+    npm run install-all
     ```
-    Server runs on `http://localhost:3001`
-
-3.  **Setup Client**
-    Open a new terminal:
+    Or manually:
     ```bash
     cd client
     npm install
-    npm run dev
     ```
-    Client runs on `http://localhost:5173`
 
-## 📂 Project Structure
+3.  **Firebase Configuration**
+    - Go to [Firebase Console](https://console.firebase.google.com/) and create a new project.
+    - Enable **Authentication** (Email/Password provider).
+    - Enable **Firestore Database** (Start in Test Mode).
+    - Enable **Storage** (Start in Test Mode).
+    - Go to Project Settings -> General -> Your apps -> Add App (Web).
+    - Copy the `firebaseConfig` object.
+    - Open `client/src/firebase.ts` and replace the placeholder values with your actual config:
+      ```typescript
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+      ```
 
-```
-skillforge-chathub/
-├── client/                 # React Frontend
-│   ├── src/
-│   │   ├── components/     # UI Components (ChatArea, Sidebar...)
-│   │   ├── context/        # State (Auth, Socket, Backgrounds)
-│   │   ├── pages/          # Routes (Login, DMs, Hubs)
-│   └── ...
-├── server/                 # Node.js Backend
-│   ├── server.js           # Main Express/Socket.io app
-│   └── uploads/            # Media storage (git-ignored)
-└── README.md
-```
+4.  **Run the Client**
+    ```bash
+    npm start
+    ```
+    The app will open at `http://localhost:5173`.
 
 ## 🛠 Tech Stack
 - **Frontend**: React, TypeScript, Tailwind CSS, Vite
-- **Backend**: Node.js, Express, Socket.io
-- **State Management**: React Context API
-- **Design**: Glassmorphism, CSS Animations
+- **Backend**: Firebase (Auth, Firestore, Storage)
+- **Deployment**: Vercel ready (static site)
 
 ## 📝 License
-This project is open source.
+MIT

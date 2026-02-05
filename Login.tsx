@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post('/api/login', { email, password });
-            login(res.data.user);
+            await signInWithEmailAndPassword(auth, email, password);
             navigate('/general');
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Login failed');
+            console.error(err);
+            setError(err.message || 'Login failed');
         }
     };
 

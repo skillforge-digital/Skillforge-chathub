@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import ChatArea from '../components/ChatArea';
+import { db } from '../firebase';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 const HubChat = () => {
     const { hubId } = useParams<{ hubId: string }>();
     const { user } = useAuth();
-    const socket = useSocket();
     const [messages, setMessages] = useState<any[]>([]);
 
     // Security check: If user tries to access a hub they don't belong to
@@ -21,31 +21,29 @@ const HubChat = () => {
     }
 
     useEffect(() => {
-        if (!socket || !hubId) return;
+        if (!hubId) return;
 
-        socket.emit('join_room', hubId);
-        setMessages([]); // Clear previous room messages
+        const q = query(collection(db, 'messages', hubId, 'chat'), orderBy('timestamp', 'asc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const msgs = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setMessages(msgs);
+        });
 
-        const handleMsg = (data: any) => {
-            setMessages((prev) => [...prev, data]);
-        };
+        return () => unsubscribe();
+    }, [hubId]);
 
-        socket.on('receive_message', handleMsg);
-
-        return () => {
-            socket.off('receive_message', handleMsg);
-        };
-    }, [socket, hubId]);
-
-    const sendMessage = (content: string, type: 'text' | 'image' | 'voice') => {
-        if (!socket || !user || !hubId) return;
+    const sendMessage = async (content: string, type: 'text' | 'image' | 'voice') => {
+        if (!user || !hubId) return;
         
-        socket.emit('send_message', {
-            room: hubId,
+        await addDoc(collection(db, 'messages', hubId, 'chat'), {
             senderId: user.id,
             senderName: user.name,
             content,
-            type
+            type,
+            timestamp: serverTimestamp()
         });
     };
 
