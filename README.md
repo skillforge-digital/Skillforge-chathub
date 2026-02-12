@@ -1,82 +1,38 @@
 # SkillForge ChatHub
 
-A futuristic social platform featuring specialized hubs, connection-based messaging, and immersive cosmic aesthetics. Now powered by **Firebase** for real-time chat, authentication, and data storage.
+A futuristic social platform featuring specialized hubs and immersive cosmic aesthetics.
 
-![SkillForge ChatHub](https://images.unsplash.com/photo-1614730341194-75c60740a2d3?q=80&w=2070&auto=format&fit=crop)
+## 🚀 Simple Version (HTML/JS)
+The project has been simplified to run directly in the browser using Vanilla HTML, JavaScript, and Firebase CDN.
 
-## 🌌 Features
+### **How to Run**
+1. **Open `index.html`** in your browser.
+   - You can just double-click the file!
+   - Or use a simple server (e.g., Live Server in VS Code).
 
-### **Immersive Experience**
-- **Dynamic Backgrounds**: Automatically rotates daily (Cosmic Void, Earth Orbit, Moon Surface, Mars Colony, Digital Grid, Sun Dust, Silver Dust).
-- **Glassmorphism UI**: Modern, translucent interface designed for readability against complex space backdrops.
-- **Custom Wallpapers**: Users can override the daily background in **Direct Messages** to set their own mood.
+2. **Configure Firebase**
+   - Open `app.js` in a text editor.
+   - Find the `firebaseConfig` object at the top.
+   - Replace the placeholder values with your actual Firebase Project keys.
 
-### **Hub System**
-- **General Hub**: Open comms for all users.
-- **Specialized Hubs**: Choose your path (Traders Hope, Creative Hope, or Developer Home). *Warning: Choosing one locks the others forever.*
+```javascript
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+```
 
-### **Direct Messaging**
-- **Real-Time Chat**: Powered by Firestore.
-- **Connection-Based**: Send requests to start chatting.
-- **Media Sharing**: Share images via Firebase Storage.
+### **Features**
+- **Authentication**: Sign up and Login using Firebase Auth.
+- **Real-Time Chat**: Messages appear instantly via Firestore.
+- **Hubs**: Switch between General, Traders, Creative, and Developers hubs.
+- **Glassmorphism UI**: Beautiful transparent interface using Tailwind CSS.
 
-### **Profile**
-- Custom Avatars and Bio.
-- Connection stats tracking.
+---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v14 or higher)
-- A Firebase Project (Free Tier)
-
-### Installation
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/yourusername/skillforge-chathub.git
-    cd skillforge-chathub
-    ```
-
-2.  **Install Dependencies**
-    ```bash
-    npm run install-all
-    ```
-    Or manually:
-    ```bash
-    cd client
-    npm install
-    ```
-
-3.  **Firebase Configuration**
-    - Go to [Firebase Console](https://console.firebase.google.com/) and create a new project.
-    - Enable **Authentication** (Email/Password provider).
-    - Enable **Firestore Database** (Start in Test Mode).
-    - Enable **Storage** (Start in Test Mode).
-    - Go to Project Settings -> General -> Your apps -> Add App (Web).
-    - Copy the `firebaseConfig` object.
-    - Open `client/src/firebase.ts` and replace the placeholder values with your actual config:
-      ```typescript
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
-      ```
-
-4.  **Run the Client**
-    ```bash
-    npm start
-    ```
-    The app will open at `http://localhost:5173`.
-
-## 🛠 Tech Stack
-- **Frontend**: React, TypeScript, Tailwind CSS, Vite
-- **Backend**: Firebase (Auth, Firestore, Storage)
-- **Deployment**: Vercel ready (static site)
-
-## 📝 License
-MIT
+## Legacy React Version
+The original React version is located in the `legacy_react_client` folder if you wish to use the full framework capabilities later.
